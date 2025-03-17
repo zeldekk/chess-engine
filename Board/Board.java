@@ -5,9 +5,10 @@ public class Board {
 
     public Board() {
         Square = new int[64];
+        setStartingPosition();
     }
 
-    public void setStartingPosition() {
+    private void setStartingPosition() {
         for (int i = 8; i < 16; i++) Square[i] = Piece.WHITE_PAWN;
         for (int i = 48; i < 56; i++) Square[i] = Piece.BLACK_PAWN;
         Square[0] = Square[7] = Piece.WHITE_ROOK;
