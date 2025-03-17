@@ -14,6 +14,4 @@ public class Piece {
     public static final int BLACK_BISHOP = 0b10100;
     public static final int BLACK_ROOK = 0b10101;
     public static final int BLACK_QUEEN = 0b10110;
-
-
 }
