@@ -1,5 +1,7 @@
 package Board;
 
+import Utilities.FenUtilities;
+
 public class Board {
     public int[] Square;
 
@@ -9,18 +11,7 @@ public class Board {
     }
 
     private void setStartingPosition() {
-        for (int i = 8; i < 16; i++) Square[i] = Piece.WHITE_PAWN;
-        for (int i = 48; i < 56; i++) Square[i] = Piece.BLACK_PAWN;
-        Square[0] = Square[7] = Piece.WHITE_ROOK;
-        Square[56] = Square[63] = Piece.BLACK_ROOK;
-        Square[1] = Square[6] = Piece.WHITE_KNIGHT;
-        Square[57] = Square[62] = Piece.BLACK_KNIGHT;
-        Square[2] = Square[5] = Piece.WHITE_BISHOP;
-        Square[58] = Square[61] = Piece.BLACK_BISHOP;
-        Square[3] = Piece.WHITE_QUEEN;
-        Square[4] = Piece.WHITE_KING;
-        Square[59] = Piece.BLACK_QUEEN;
-        Square[60] = Piece.BLACK_KING;
+        Square = FenUtilities.fenToArray(FenUtilities.startingPositionFen);
     }
 
     public void display() {
