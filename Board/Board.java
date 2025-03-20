@@ -2,6 +2,8 @@ package Board;
 
 import Utilities.FenUtilities;
 
+import static Board.Piece.isWhite;
+
 public class Board {
     public int[] Square;
 
@@ -22,7 +24,37 @@ public class Board {
     }
 
     public void makeMove(Move move) {
-            Square[move.getTo()] = Square[move.getFrom()];
-            Square[move.getFrom()] = Piece.EMPTY;
+            if (isLegalMove(move)) {
+                Square[move.getTo()] = Square[move.getFrom()];
+                Square[move.getFrom()] = Piece.EMPTY;
+            }
+    }
+
+    private boolean isLegalMove(Move move) {
+        int movingPiece = Square[move.getFrom()];
+
+        switch (movingPiece) {
+            case Piece.EMPTY -> {
+                return false;
+            }
+            case Piece.WHITE_KING -> { //Add can't move into check
+                if (isWhite(Square[move.getTo()])) {
+                    return false;
+                }
+                if (move.getTo() != move.getFrom() + 1 || move.getTo() != move.getFrom() + 8 || move.getTo() != move.getFrom() + 9 || move.getTo() != move.getFrom() + 7 || move.getTo() != move.getFrom() - 1 || move.getTo() != move.getFrom() - 8 || move.getTo() != move.getFrom() - 7 || move.getTo() != move.getFrom() - 9) {
+                    return false;
+                }
+            }
+            case Piece.BLACK_KING -> {
+                if (!isWhite(Square[move.getTo()])) {
+                    return false;
+                }
+                if (move.getTo() != move.getFrom() + 1 || move.getTo() != move.getFrom() + 8 || move.getTo() != move.getFrom() + 9 || move.getTo() != move.getFrom() + 7 || move.getTo() != move.getFrom() - 1 || move.getTo() != move.getFrom() - 8 || move.getTo() != move.getFrom() - 7 || move.getTo() != move.getFrom() - 9) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 }
