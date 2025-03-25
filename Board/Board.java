@@ -2,7 +2,6 @@ package Board;
 
 import Utilities.FenUtilities;
 
-import static Board.Piece.BLACK_QUEEN;
 import static Board.Piece.isWhite;
 
 public class Board {
