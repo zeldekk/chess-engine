@@ -6,74 +6,54 @@ public class FenUtilities {
 
     public static final String startingPositionFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-    private static boolean isValidFEN(String fen) {
+    public static class BoardState {
+        public int[] board;
+        public boolean whiteToMove;
+        public boolean canCastleWhiteKingside, canCastleWhiteQueenside;
+        public boolean canCastleBlackKingside, canCastleBlackQueenside;
+        public int enPassantTarget;
+        public int halfmoveClock;
+        public int fullmoveNumber;
+    }
+
+    public static BoardState fenToBoardState(String fen) {
+        BoardState state = new BoardState();
+
         String[] parts = fen.split(" ");
+        if (parts.length != 6) throw new IllegalArgumentException("Invalid FEN");
 
-        if (parts.length != 6) return false;
+        state.board = parseBoard(parts[0]);
+        state.whiteToMove = parts[1].equals("w");
+        state.canCastleWhiteKingside = parts[2].contains("K");
+        state.canCastleWhiteQueenside = parts[2].contains("Q");
+        state.canCastleBlackKingside = parts[2].contains("k");
+        state.canCastleBlackQueenside = parts[2].contains("q");
+        state.enPassantTarget = parseEnPassant(parts[3]);
+        state.halfmoveClock = Integer.parseInt(parts[4]);
+        state.fullmoveNumber = Integer.parseInt(parts[5]);
 
-        String piecePlacement = parts[0];
-        String activeColor = parts[1];
-        String castlingRights = parts[2];
-        String enPassant = parts[3];
-        String halfMove = parts[4];
-        String fullMove = parts[5];
-
-        String[] rows = piecePlacement.split("/");
-        if (rows.length != 8) return false;
-
-        for (String row : rows) {
-            if (!isValidRow(row)) return false;
-        }
-
-        if (!activeColor.equals("w") && !activeColor.equals("b")) return false;
-
-        if (!castlingRights.matches("K?Q?k?q?|-")) return false;
-
-        if (!enPassant.matches("([a-h][36]|-)")) return false;
-
-        if (!halfMove.matches("\\d+")) return false;
-
-        return fullMove.matches("[1-9]\\d*");
+        return state;
     }
 
-    private static boolean isValidRow(String row) {
-        int count = 0;
-
-        for (char ch : row.toCharArray()) {
-            if ("rnbqkpRNBQKP".indexOf(ch) != -1) {
-                count++;
-            } else if (Character.isDigit(ch)) {
-                count += Character.getNumericValue(ch);
-            } else {
-                return false;
-            }
-
-            if (count > 8) return false;
-        }
-
-        return count == 8;
-    }
-
-    public static int[] fenToArray (String fen) {
-
-        if (!isValidFEN(fen)) {
-            return new int[0];
-        }
-
-        String position = fen.split(" ")[0];
-
+    private static int[] parseBoard(String boardFen) {
         int[] board = new int[64];
         int index = 0;
 
-        for (char c : position.toCharArray()) {
+        for (char c : boardFen.toCharArray()) {
             if (Character.isDigit(c)) {
-                index += Character.getNumericValue(c); // Skip empty squares
+                index += Character.getNumericValue(c);
             } else if (c != '/') {
                 board[index++] = pieceFromChar(c);
             }
         }
-
         return board;
+    }
+
+    private static int parseEnPassant(String enPassant) {
+        if (enPassant.equals("-")) return -1;
+        int file = enPassant.charAt(0) - 'a';
+        int rank = enPassant.charAt(1) - '1';
+        return rank * 8 + file;
     }
 
     private static int pieceFromChar(char c) {

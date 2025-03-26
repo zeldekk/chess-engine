@@ -6,6 +6,11 @@ import static Board.Piece.isWhite;
 
 public class Board {
     public int[] Square;
+    private boolean whiteToMove;
+    private boolean canCastleWhiteKingside, canCastleWhiteQueenside, canCastleBlackKingside, canCastleBlackQueenside;
+    private int enPassantTarget;
+    private int halfmoveClock;
+    private int fullmoveCount;
 
     public Board() {
         Square = new int[64];
@@ -13,7 +18,20 @@ public class Board {
     }
 
     private void setStartingPosition() {
-        Square = FenUtilities.fenToArray(FenUtilities.startingPositionFen);
+        loadFromFEN(FenUtilities.startingPositionFen);
+    }
+
+    public void loadFromFEN(String fen) {
+        FenUtilities.BoardState state = FenUtilities.fenToBoardState(fen);
+        this.Square = state.board;
+        this.whiteToMove = state.whiteToMove;
+        this.canCastleWhiteKingside = state.canCastleWhiteKingside;
+        this.canCastleWhiteQueenside = state.canCastleWhiteQueenside;
+        this.canCastleBlackKingside = state.canCastleBlackKingside;
+        this.canCastleBlackQueenside = state.canCastleBlackQueenside;
+        this.enPassantTarget = state.enPassantTarget;
+        this.halfmoveClock = state.halfmoveClock;
+        this.fullmoveCount = state.fullmoveNumber;
     }
 
     public void display() {
@@ -24,13 +42,31 @@ public class Board {
     }
 
     public void makeMove(Move move) {
-            if (isLegalMove(move)) {
-                Square[move.getTo()] = Square[move.getFrom()];
-                Square[move.getFrom()] = Piece.EMPTY;
+        if (isLegalMove(move)) {
+            int movingPiece = Square[move.getFrom()];
+            int targetPiece = Square[move.getTo()];
+            Square[move.getTo()] = movingPiece;
+            Square[move.getFrom()] = Piece.EMPTY;
+
+            if (targetPiece != Piece.EMPTY || movingPiece == Piece.WHITE_PAWN || movingPiece == Piece.BLACK_PAWN) {
+                halfmoveClock = 0;
+            } else {
+                halfmoveClock++;
             }
+            enPassantTarget = -1;
+            if (movingPiece == Piece.WHITE_PAWN && move.getTo() - move.getFrom() == 16) {
+                enPassantTarget = move.getFrom() + 8;
+            } else if (movingPiece == Piece.BLACK_PAWN && move.getFrom() - move.getTo() == 16) {
+                enPassantTarget = move.getFrom() - 8;
+            }
+            whiteToMove = !whiteToMove;
+            if (!whiteToMove) {
+                fullmoveCount++;
+            }
+        }
     }
 
-    private boolean isLegalMove(Move move) {
+    public boolean isLegalMove(Move move) {
         int movingPiece = Square[move.getFrom()];
         int targetSquare = Square[move.getTo()];
 
@@ -68,10 +104,14 @@ public class Board {
 
         switch (piece) {
             case Piece.WHITE_PAWN -> {
-                if (colDiff == 1 && rowDiff == 1 && isWhite(Square[to])) return true;
+                if (to == from - 8 && Square[to] == Piece.EMPTY) return true;
+                if (from >= 48 && from <= 55 && to == from - 16 && Square[to] == Piece.EMPTY && Square[from - 8] == Piece.EMPTY) return true;
+                if (colDiff == 1 && rowDiff == 1 && !isWhite(Square[to]) && Square[to] != Piece.EMPTY) return true;
             }
             case Piece.BLACK_PAWN -> {
-                if (colDiff == 1 && rowDiff == 1 && !isWhite(Square[to]) && Square[to] != Piece.EMPTY) return true;
+                if (to == from + 8 && Square[to] == Piece.EMPTY) return true;
+                if (from >= 8 && from <= 15 && to == from + 16 && Square[to] == Piece.EMPTY && Square[from + 8] == Piece.EMPTY) return true;
+                if (colDiff == 1 && rowDiff == 1 && isWhite(Square[to]) && Square[to] != Piece.EMPTY) return true;
             }
             case Piece.WHITE_KNIGHT, Piece.BLACK_KNIGHT -> {
                 return (rowDiff == 2 && colDiff == 1) || (rowDiff == 1 && colDiff == 2);
@@ -129,4 +169,3 @@ public class Board {
         return false;
     }
 }
-
