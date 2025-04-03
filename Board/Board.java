@@ -7,7 +7,7 @@ import static Board.Piece.isWhite;
 public class Board {
     public int[] Square;
     private boolean whiteToMove;
-    private boolean canCastleWhiteKingside, canCastleWhiteQueenside, canCastleBlackKingside, canCastleBlackQueenside;
+    private boolean canCastleWhiteKingside, canCastleWhiteQueenside, canCastleBlackKingside, canCastleBlackQueenside = true;
     private int enPassantTarget;
     private int halfmoveClock;
     private int fullmoveCount;
@@ -45,6 +45,28 @@ public class Board {
         if (isLegalMove(move)) {
             int movingPiece = Square[move.getFrom()];
             int targetPiece = Square[move.getTo()];
+
+            if (move.getFrom()==56 && canCastleWhiteQueenside) {
+                canCastleWhiteQueenside = false;
+            }
+            if (move.getFrom()==56 && canCastleWhiteKingside) {
+                canCastleWhiteKingside = false;
+            }
+            if (move.getFrom()==0 && canCastleBlackQueenside) {
+                canCastleBlackQueenside = false;
+            }
+            if (move.getFrom()==7 && canCastleBlackKingside) {
+                canCastleBlackKingside = false;
+            }
+            if (move.getFrom() == 4) {
+                canCastleBlackQueenside = false;
+                canCastleBlackKingside = false;
+            }
+            if (move.getFrom() == 60) {
+                canCastleWhiteQueenside = false;
+                canCastleWhiteKingside = false;
+            }
+
             Square[move.getTo()] = movingPiece;
             Square[move.getFrom()] = Piece.EMPTY;
 
@@ -69,6 +91,7 @@ public class Board {
     public boolean isLegalMove(Move move) {
         int movingPiece = Square[move.getFrom()];
         int targetSquare = Square[move.getTo()];
+        int moveFlag = move.getMoveFlag();
 
         if (movingPiece == Piece.EMPTY) return false;
 
@@ -77,10 +100,55 @@ public class Board {
 
         if (isWhitePiece == isTargetPieceWhite && targetSquare != Piece.EMPTY) return false;
 
-        if (!canMove(move.getFrom(), move.getTo(), movingPiece)) return false;
+        if (moveFlag == 0) {
+            if (!canMove(move.getFrom(), move.getTo(), movingPiece)) return false;
+        } else if (moveFlag == 1) {
+            //TODO: en passant legality move check, promotion legality check
+        }
+        return (movingPiece != Piece.WHITE_KING && movingPiece != Piece.BLACK_KING) || !isSquareAttacked(move.getTo(), !isWhitePiece);
+    }
 
-        return (movingPiece != Piece.WHITE_KING && movingPiece != Piece.BLACK_KING)
-                || !isSquareAttacked(move.getTo(), !isWhitePiece);
+    private boolean isCastlingMoveLegal(Move move) {
+        switch(move.getTo()) {
+            case 2: {
+                if (!canCastleBlackQueenside) return false;
+                if (Square[1] != Piece.EMPTY || Square[2] != Piece.EMPTY || Square[3] != Piece.EMPTY) return false;
+                if (isSquareAttacked(2, true) || isSquareAttacked(3, true) || isSquareAttacked(4, true)) {
+                    //checking if squares are attacked or if the king is in check
+                    return false;
+                }
+                break;
+            }
+            case 6: {
+                if (!canCastleBlackKingside) return false;
+                if (Square[5] != Piece.EMPTY || Square[6] != Piece.EMPTY) return false;
+                if (isSquareAttacked(6, true) || isSquareAttacked(5, true) || isSquareAttacked(4, true)) {
+                    //checking if squares are attacked or if the king is in check
+                    return false;
+                }
+                break;
+            }
+            case 58: {
+                if (!canCastleWhiteQueenside) return false;
+                if (Square[57] != Piece.EMPTY || Square[58] != Piece.EMPTY || Square[59] != Piece.EMPTY) return false;
+                if (isSquareAttacked(58, true) || isSquareAttacked(59, true) || isSquareAttacked(60, true)) {
+                    //checking if squares are attacked or if the king is in check
+                    return false;
+                }
+                break;
+            }
+            case 62: {
+                if (!canCastleWhiteKingside) return false;
+                if (Square[61] != Piece.EMPTY || Square[62] != Piece.EMPTY) return false;
+                if (isSquareAttacked(60, true) || isSquareAttacked(61, true) || isSquareAttacked(62, true)) {
+                    //checking if squares are attacked or if the king is in check
+                    return false;
+                }
+                break;
+            }
+            default: break;
+        }
+        return true;
     }
 
     public boolean isSquareAttacked(int square, boolean byWhite) {
