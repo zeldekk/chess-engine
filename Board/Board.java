@@ -103,8 +103,9 @@ public class Board {
         if (moveFlag == 0) {
             if (!canMove(move.getFrom(), move.getTo(), movingPiece)) return false;
         } else if (moveFlag == 1) {
-            //TODO: en passant legality move check, promotion legality check
+            if (!isCastlingMoveLegal(move)) return false;
         }
+        //TODO: en passant legality move check, promotion legality check
         return (movingPiece != Piece.WHITE_KING && movingPiece != Piece.BLACK_KING) || !isSquareAttacked(move.getTo(), !isWhitePiece);
     }
 
