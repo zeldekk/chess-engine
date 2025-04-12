@@ -1,13 +1,18 @@
 package Board;
 
+//TODO: potentially canmove and isattacked are linked wrongly so ill need to fix that, and also board cloning would be cool af
+
 import Utilities.FenUtilities;
 
 import static Board.Piece.isWhite;
 
 public class Board {
     public int[] Square;
-    private boolean whiteToMove;
-    private boolean canCastleWhiteKingside, canCastleWhiteQueenside, canCastleBlackKingside, canCastleBlackQueenside = true;
+    public boolean whiteToMove;
+    private boolean canCastleWhiteKingside = true;
+    private boolean canCastleWhiteQueenside = true;
+    private boolean canCastleBlackKingside= true;
+    private boolean canCastleBlackQueenside = true;
     private int enPassantTarget;
     private int halfmoveClock;
     private int fullmoveCount;
@@ -49,30 +54,48 @@ public class Board {
             if (move.getMoveFlag() == 0) {
                 Square[move.getTo()] = movingPiece;
                 Square[move.getFrom()] = Piece.EMPTY;
+                if (movingPiece == Piece.WHITE_KING) {
+                    canCastleWhiteKingside = false;
+                    canCastleWhiteQueenside = false;
+                }
+                if (movingPiece == Piece.BLACK_KING) {
+                    canCastleBlackKingside = false;
+                    canCastleBlackQueenside = false;
+                }
+                if (move.getFrom() == 0 || move.getTo() == 0) canCastleBlackQueenside = false;
+                if (move.getFrom() == 7 || move.getTo() == 7) canCastleBlackKingside = false;
+                if (move.getFrom() == 56 || move.getTo() == 56) canCastleWhiteQueenside = false;
+                if (move.getFrom() == 63 || move.getTo() == 63) canCastleWhiteKingside = false;
             } else if (move.getMoveFlag() == 1) {
                 if (move.getFrom() == 4 && move.getTo() == 2) { // black queenside castling
-                    targetPiece = movingPiece;
-                    movingPiece = Piece.EMPTY;
                     Square[3] = Piece.BLACK_ROOK;
                     Square[0] = Piece.EMPTY;
                     canCastleBlackQueenside = false;
                 } else if (move.getFrom() == 4 && move.getTo() == 6) { // black kingside castling
-                    targetPiece = movingPiece;
-                    movingPiece = Piece.EMPTY;
                     Square[5] =  Piece.BLACK_ROOK;
                     Square[7] = Piece.EMPTY;
+                    canCastleBlackKingside = false;
                 } else if (move.getFrom() == 60 && move.getTo() == 58) { // white queenside castling
-                    targetPiece = movingPiece;
-                    movingPiece = Piece.EMPTY;
                     Square[59] = Piece.WHITE_ROOK;
                     Square[56] = Piece.EMPTY;
+                    canCastleWhiteQueenside = false;
                 } else if (move.getFrom() == 60 && move.getTo() == 62) {
-                    targetPiece = movingPiece;
-                    movingPiece = Piece.EMPTY;
                     Square[61] = Piece.WHITE_ROOK;
                     Square[63] = Piece.EMPTY;
+                    canCastleWhiteKingside = false;
                 } else {
                     return;
+                }
+            } else if (move.getMoveFlag() == 2) {
+                Square[move.getTo()] = move.getPromotionPiece();
+                Square[move.getFrom()] = Piece.EMPTY;
+            } else if (move.getMoveFlag() == 3) {
+                Square[move.getTo()] = movingPiece;
+                Square[move.getFrom()] = Piece.EMPTY;
+                if (isWhite(movingPiece)) {
+                    Square[move.getTo() + 8] = Piece.EMPTY;
+                } else {
+                    Square[move.getTo() - 8] = Piece.EMPTY;
                 }
             }
 
@@ -106,6 +129,7 @@ public class Board {
 
         if (moveFlag != 2 && promotionPiece != Piece.EMPTY) return false;
 
+
         boolean isWhitePiece = isWhite(movingPiece);
         boolean isTargetPieceWhite = isWhite(targetSquare);
 
@@ -117,11 +141,21 @@ public class Board {
             if (!isCastlingMoveLegal(move)) return false;
         } else if (moveFlag == 2) {
             if (isWhite(movingPiece) != isWhite(promotionPiece)) return false;
-            return movingPiece >> 2 != 0b000 && movingPiece >> 2 != 0b001 && movingPiece >> 2 != 0b010;
+
+            if (isWhite(movingPiece) && move.getTo() / 8 != 0) return false;
+            if (!isWhite(movingPiece) && move.getTo() / 8 != 7) return false;
+
+            int type = movingPiece & 0b00111;
+            if (type != 0b010) return false;
+
+            int promoType = promotionPiece & 0b00111;
+            if (promoType < 0b011 || promoType > 0b110) return false;
+
+            return true;
         } else if (moveFlag == 3){
-            if (movingPiece >> 2 != 0b010) return false;
+            if ((movingPiece & 0b00111) != 0b010) return false;
             if (move.getTo() != enPassantTarget) return false;
-            if (move.getTo() != move.getFrom() - 9 || move.getTo() != move.getFrom() - 7 || move.getTo() != move.getFrom() + 9 || move.getTo() != move.getFrom() + 7) return false;
+            if (move.getTo() != move.getFrom() - 9 && move.getTo() != move.getFrom() - 7 && move.getTo() != move.getFrom() + 9 && move.getTo() != move.getFrom() + 7) return false;
         }
         return (movingPiece != Piece.WHITE_KING && movingPiece != Piece.BLACK_KING) || !isSquareAttacked(move.getTo(), !isWhitePiece);
     }
@@ -132,7 +166,6 @@ public class Board {
                 if (!canCastleBlackQueenside) return false;
                 if (Square[1] != Piece.EMPTY || Square[2] != Piece.EMPTY || Square[3] != Piece.EMPTY) return false;
                 if (isSquareAttacked(2, true) || isSquareAttacked(3, true) || isSquareAttacked(4, true)) {
-                    //checking if squares are attacked or if the king is in check
                     return false;
                 }
                 break;
@@ -141,7 +174,6 @@ public class Board {
                 if (!canCastleBlackKingside) return false;
                 if (Square[5] != Piece.EMPTY || Square[6] != Piece.EMPTY) return false;
                 if (isSquareAttacked(6, true) || isSquareAttacked(5, true) || isSquareAttacked(4, true)) {
-                    //checking if squares are attacked or if the king is in check
                     return false;
                 }
                 break;

@@ -4,7 +4,7 @@ import Board.Piece;
 
 public class FenUtilities {
 
-    public static final String startingPositionFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    public static final String startingPositionFen = "8/2k3P1/8/8/8/8/4pK2/8 w - - 0 1";
 
     public static class BoardState {
         public int[] board;
